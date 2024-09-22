@@ -1,27 +1,30 @@
 from fastapi import FastAPI, Depends, HTTPException
-from fastapi.security import APIKeyHeader
 from scraper import Scraper
-from database import DatabaseManager
-from cache import Cache
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+from config import get_settings, Settings
+from models import Product
+from database import save_products
+from cache import cache_product
+from typing import List
 
 app = FastAPI()
-API_KEY = os.getenv('API_KEY')
-api_key_header = APIKeyHeader(name='X-API-KEY')
 
-cache = Cache()
-db_manager = DatabaseManager('scraped_data.json')
+# Authentication dependency
+def authenticate(api_key: str = Depends(get_settings)):
+    if api_key.API_KEY != Settings().API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
 
-def authenticate(api_key: str = Depends(api_key_header)):
-    if api_key != API_KEY:
-        raise HTTPException(status_code=403, detail='Forbidden')
-
-@app.get('/scrape')
-async def scrape_products(pages: int = 5, proxy: str = None, api_key: str = Depends(authenticate)):
-    scraper = Scraper(pages, proxy, db_manager, cache)
-    scraped_count = await scraper.scrape()
-    print(f'Scraping completed. Total products scraped: {scraped_count}')
-    return {'message': f'Scraping completed. Total products scraped: {scraped_count}'}
+@app.get("/api/scrape", response_model=List[Product])
+async def scrape_products(
+    page_limit: int = 5, 
+    proxy: str = None, 
+    api_key: str = Depends(authenticate)
+):
+    scraper = Scraper(page_limit, proxy)
+    products = scraper.scrape_catalogue()
+    
+    for product in products:
+        cached = cache_product(product)
+        if not cached:
+            save_products(products)
+    
+    return products

@@ -1,19 +1,12 @@
 import json
-from typing import List, Dict
+from typing import List
 
-class DatabaseManager:
-    def __init__(self, filename: str):
-        self.filename = filename
+DB_FILE = "scraped_data.json"
 
-    def load_products(self) -> List[Dict[str, str]]:
-        try:
-            with open(self.filename, 'r') as file:
-                return json.load(file)
-        except FileNotFoundError:
-            return []
-
-    def save_product(self, product: Dict[str, str]):
-        products = self.load_products()
-        products.append(product)
-        with open(self.filename, 'w') as file:
-            json.dump(products, file)
+def save_products(products: List[dict]):
+    try:
+        with open(DB_FILE, 'w') as f:
+            json.dump(products, f)
+        print(f"Saved {len(products)} products to {DB_FILE}")
+    except Exception as e:
+        print(f"Error saving products: {e}")

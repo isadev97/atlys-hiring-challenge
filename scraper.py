@@ -1,50 +1,48 @@
 import requests
 from bs4 import BeautifulSoup
-import time
-from typing import List, Dict
+from models import Product
+from time import sleep
+from typing import List
+
+PAGE_LIMIT = 3
 
 class Scraper:
-    def __init__(self, pages: int, proxy: str, db_manager, cache):
-        self.pages = pages
+    def __init__(self, page_limit: int, proxy: str = None):
+        self.page_limit = page_limit
         self.proxy = proxy
-        self.db_manager = db_manager
-        self.cache = cache
+        self.base_url = "https://dentalstall.com/shop/page/"
+        self.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
 
-    async def scrape(self) -> int:
-        scraped_products = 0
-        for page in range(1, self.pages + 1):
-            url = f'https://dentalstall.com/shop/page/{page}/'
-            response = self.fetch_page(url)
-            if response:
-                products = self.parse_products(response)
-                for product in products:
-                    if self.cache.is_new_or_updated(product):
-                        self.db_manager.save_product(product)
-                        self.cache.store_product(product)
-                        scraped_products += 1
-            time.sleep(2)
-        return scraped_products
-
-    def fetch_page(self, url: str):
-        for attempt in range(3):
-            try:
-                response = requests.get(url, proxies={'http': self.proxy, 'https': self.proxy} if self.proxy else None)
-                response.raise_for_status()
-                return response.text
-            except requests.RequestException:
-                time.sleep(5)
-        return None
-
-    def parse_products(self, html: str) -> List[Dict[str, str]]:
-        soup = BeautifulSoup(html, 'html.parser')
+    def scrape_catalogue(self) -> List[Product]:
         products = []
-        for item in soup.select('.product-item'):
-            title = item.select_one('.product-title').get_text(strip=True)
-            price = float(item.select_one('.product-price').get_text(strip=True).replace('$', ''))
-            image_path = item.select_one('img')['src']
-            products.append({
-                'product_title': title,
-                'product_price': price,
-                'path_to_image': image_path,
-            })
+        for page_num in range(1, PAGE_LIMIT):
+            try:
+                url = f"{self.base_url}{page_num}/"  if page_num >=2 else f"https://dentalstall.com/shop/" 
+                print(f"Scraping {url}")
+                response = self.get_page_content(url)
+                soup = BeautifulSoup(response.text, 'html.parser')
+                for item in soup.select(".product"):
+                    name = item.select_one(".woo-loop-product__title").get_text(strip=True)
+                    price = item.select_one(".amount").get_text(strip=True)
+                    image_url = item.select_one(".mf-product-thumbnail").find("img")["data-lazy-src"]
+                    products.append({
+                        'product_title': name,
+                        'product_price': price,
+                        'path_to_image': image_url,
+                    })
+            except Exception as e:
+                print(f"Error scraping page {page_num}: {e}. Retrying...")
+                sleep(5)
         return products
+
+    def get_page_content(self, url: str):
+        proxies = {"http": self.proxy, "https": self.proxy} if self.proxy else None
+        response = requests.get(url, headers=self.headers, proxies=proxies)
+        if response.status_code != 200:
+            print(f"Failed to retrieve {url}. Status code: {response.status_code}")
+            raise Exception(f"Failed to retrieve {url}")
+        return response
+
+   
