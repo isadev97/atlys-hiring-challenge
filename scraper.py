@@ -4,7 +4,6 @@ from models import Product
 from time import sleep
 from typing import List
 
-PAGE_LIMIT = 3
 
 class Scraper:
     def __init__(self, page_limit: int, proxy: str = None):
@@ -17,7 +16,7 @@ class Scraper:
 
     def scrape_catalogue(self) -> List[Product]:
         products = []
-        for page_num in range(1, PAGE_LIMIT):
+        for page_num in range(1, self.page_limit+1):
             try:
                 url = f"{self.base_url}{page_num}/"  if page_num >=2 else f"https://dentalstall.com/shop/" 
                 print(f"Scraping {url}")
