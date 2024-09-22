@@ -12,8 +12,10 @@ This project scrapes product data from a specified website and stores it in a JS
 
 1. Clone the repository:
 
+   ```
    git clone https://github.com/isadev97/atlys-hiring-challenge.git
    cd project_folder
+   ```
 
 2. Run the installation script:
 
@@ -22,14 +24,6 @@ This project scrapes product data from a specified website and stores it in a JS
    ```
 
    This script will create a `.env` file, install the necessary dependencies, and run the server.
-
-## Running the API
-
-1. Start the API server:
-
-   uvicorn main:app --reload
-
-   Make sure to replace main:app with the appropriate module and app name if different.
 
 ## Scraping Products
 
