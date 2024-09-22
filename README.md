@@ -12,12 +12,14 @@ This project scrapes product data from a specified website and stores it in a JS
 
 1. Clone the repository:
 
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/isadev97/atlys-hiring-challenge.git
+   cd project_folder
 
 2. Run the installation script:
 
-   ./install.sh
+   ```
+   bash install.sh
+   ```
 
    This script will create a `.env` file, install the necessary dependencies, and run the server.
 
@@ -33,7 +35,9 @@ This project scrapes product data from a specified website and stores it in a JS
 
 To scrape products, execute the following curl command:
 
+```
 curl -X GET "http://127.0.0.1:8000/api/scrape?page_limit=5" -H "accept: application/json" -H "Authorization: Bearer y27vLBACEbsZIckn-8HPcIUwVyjDnqqAkJlYy_oZI3M"
+```
 
 ### Notes
 
